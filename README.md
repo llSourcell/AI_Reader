@@ -5,8 +5,8 @@ This code will take in an input phase from the user, analyze it, and output a re
 Dependencies
 ============
 
-* Python 2.7 (https://www.python.org/downloads/)
-* bazel instructions [here](http://bazel.io/docs/install.html)
+* Python 2.7 - (https://www.python.org/downloads/)
+* bazel - instructions [here](http://bazel.io/docs/install.html)
 * swig `brew install swig`
 * protobuf `pip install -U protobuf==3.0.0b2`
 * asciitree `pip install -U protobuf==3.0.0b2`
@@ -17,12 +17,28 @@ Use [pip](https://pypi.python.org/pypi/pip) to install any missing dependencies
 Basic Usage
 ===========
 
-1. `mkdir data && mkdir models`
-2. run 'python main.py'. This will collect the data, create the chord mapping file in data/nottingham.pickle, and train the model
-3. Run `python rnn_sample.py --config_file new_config_file.config` to generate a new MIDI song.
+1. Build the code from
+2. 
+```shell
+  cd models/syntaxnet/tensorflow
+  ./configure
+  cd ..
+  bazel test syntaxnet/... util/utf8/...
+  # On Mac, run the following:
+  bazel test --linkopt=-headerpad_max_install_names \
+    syntaxnet/... util/utf8/...
+```
+2. Run the demo class with an input phrase of your choice 
 
-Give it 1-2 hours to train on your local machine, then generate the new song. You don't have to wait for it to finish, just wait until you see the 'saving model' message in terminal. In a future video, I'll talk about how to easily setup cloud GPU training. Likely using www.fomoro.com
+```shell
+python test.py find me a restaurant in san francisco
+```
+
+Sample output: 
+```shell
+Intent is: discover restaurant
+```
 
 Credits
 ===========
-Credit for the vast majority of code here goes to [Yoav Zimmerman](https://github.com/yoavz). I've merely created a wrapper around all of the important functions to get people started.
+Credit for the vast majority of code here goes to [The SyntaxNet team at Google](https://github.com/tensorflow/models/edit/master/syntaxnet). I've merely created a wrapper around some of the important functions to get people started.
