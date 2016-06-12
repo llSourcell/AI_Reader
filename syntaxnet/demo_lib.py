@@ -22,8 +22,11 @@ def get_root_word(dependency_tree):
 	return root
 
 def get_dependent_object(dependency_tree):
-	dobj = dependency_tree[3].split()[1]
-	return dobj
+	print len(dependency_tree)
+	for string in dependency_tree:
+		if string.find("dobj") != -1:
+			dobj = string.split()[1]
+			return dobj
 
 #retrieve synonym for root word
 def get_synonym(root):
