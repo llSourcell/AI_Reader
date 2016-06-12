@@ -20,7 +20,7 @@ Basic Usage
 Step 1 - Build from source 
 
 ```shell
-  cd models/syntaxnet/tensorflow
+  cd syntaxnet/tensorflow
   ./configure
   cd ..
   bazel test syntaxnet/... util/utf8/...
