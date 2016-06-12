@@ -31,7 +31,7 @@ Step 1 - Build from source
 Step 2 - Run the demo class with an input phrase of your choice 
 
 ```shell
-python test.py find me a restaurant in san francisco
+python syntaxnet/test.py find me a restaurant in san francisco
 ```
 
 Sample output: 
