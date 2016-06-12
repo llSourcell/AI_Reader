@@ -17,8 +17,8 @@ Use [pip](https://pypi.python.org/pypi/pip) to install any missing dependencies
 Basic Usage
 ===========
 
-1. Build the code from
-2. 
+Step 1 - Build from source 
+
 ```shell
   cd models/syntaxnet/tensorflow
   ./configure
@@ -28,7 +28,7 @@ Basic Usage
   bazel test --linkopt=-headerpad_max_install_names \
     syntaxnet/... util/utf8/...
 ```
-2. Run the demo class with an input phrase of your choice 
+Step 2 - Run the demo class with an input phrase of your choice 
 
 ```shell
 python test.py find me a restaurant in san francisco
