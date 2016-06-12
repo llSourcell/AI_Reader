@@ -1,0 +1,211 @@
+---
+title: "titleParsing"
+output: html_document
+---
+
+Generate the text file to feed into syntaxNet
+
+```{r}
+library(lme4)
+library(dplyr)
+library(ggplot2)
+
+setwd("~/Repos/community_conventions/")
+data = read.csv("./redditSubmissions.csv")
+dim(data)
+
+# Get rid of infrequently used subreddits 
+# (this is where titles.txt comes from)
+d <- data %>%
+  group_by(subreddit) %>%
+  filter(length(title) > 50) %>%
+  ungroup() %>%
+  mutate(subreddit = factor(subreddit)) %>%
+  mutate(titleLength = nchar(as.character(title)))
+
+```
+
+### Exploratory analyses
+
+Raw message lengths:
+
+```{r}
+d %>% 
+  mutate(titleLength = nchar(as.character(title))) %>%
+  group_by(subreddit) %>%
+  summarize(messageLength = mean(titleLength)) %>%
+  arrange(desc(messageLength)) %>%
+  ggplot(aes(x = reorder(subreddit, messageLength), y = messageLength)) +
+    geom_bar(stat = "identity") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+```
+
+Relative message lengths, controlling for reposts
+
+```{r}
+named.contr.sum<-function(x, ...) {
+    if (is.factor(x)) {
+        x <- levels(x)
+    } else if (is.numeric(x) & length(x)==1L) {
+        stop("cannot create names with integer value. Pass factor levels")
+    }
+    x<-contr.sum(x, ...)
+    colnames(x) <- apply(x,2,function(x) 
+         paste(names(x[x>0]))
+    )
+    x
+}
+
+contrasts(d$subreddit) <- named.contr.sum(levels(d$subreddit))
+
+numWordsMod = lmer(titleLength ~ subreddit + (1 | X.image_id), 
+     data = d)
+
+numWordsfixedEffectCoefs = scale(fixef(numWordsMod), center = F)
+
+data.frame(subreddit = rownames(numWordsfixedEffectCoefs), 
+            coefs = numWordsfixedEffectCoefs) %>%
+  mutate(subreddit = substring(subreddit, 10)) %>%
+  filter(subreddit != "t)") %>%
+  arrange(desc(coefs)) %>%
+  ggplot(aes(x = reorder(subreddit, coefs), y = coefs)) +
+    geom_bar(stat = "identity") +
+    ylab("message length coef (lmer)") +
+    xlab("subreddit") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+Read in parsey output
+
+```{r}
+parseyOut = read.csv("newOut.txt", sep = "\t")
+head(parseyOut)
+```
+
+POS
+
+```{r}
+library(dplyr)
+parsedD = d %>% 
+  mutate(row = row_number()) %>%
+  left_join(parseyOut, by = "row") %>%
+  select(X.image_id, subreddit, row, wordIndex, form, upostag, head)
+
+parsedD %>%
+  group_by(subreddit, upostag) %>%
+  tally() %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot(aes(x = upostag, y = prop, group = subreddit)) +
+    geom_line() +
+    ylab("noun") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+
+```{r}
+parsedD %>%
+  group_by(subreddit, upostag) %>%
+  tally() %>%
+  mutate(prop = n / sum(n)) %>%
+  filter(upostag == ".") %>%
+  ggplot(aes(x = reorder(subreddit, prop), y = prop)) +
+    geom_bar(stat = "identity") +
+    ylab("punctuation") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+
+```{r}
+depths <- parsedD %>%
+  group_by(subreddit, row) %>%
+  mutate(depth = length(unique(head))) %>%
+  ungroup() %>%
+  group_by(subreddit, X.image_id) %>%
+  summarize(meanDepth = mean(depth))
+
+contrasts(depths$subreddit) <- named.contr.sum(depths$subreddit)
+depthsMod = lmer(meanDepth ~ subreddit + (1 | X.image_id), 
+                 data = depths)
+
+depthFixedEffectCoefs = scale(fixef(depthsMod), center = F)
+
+data.frame(subreddit = rownames(depthFixedEffectCoefs), 
+           coefs = depthFixedEffectCoefs) %>%
+  mutate(subreddit = substring(subreddit, 10)) %>%
+  filter(subreddit != "t)") %>%
+  arrange(desc(coefs)) %>%
+  ggplot(aes(x = reorder(subreddit, coefs), y = coefs)) +
+    geom_bar(stat = "identity") +
+    ylab("depth fixed effects (lmer)") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Take ratio (i.e. "complexity?")
+
+```{r}
+ratioDF = data.frame(subreddit = rownames(depthFixedEffectCoefs), 
+           coefs = depthFixedEffectCoefs) %>% 
+  cbind(numWordsfixedEffectCoefs) %>%
+  rename(depth = coefs,
+         numWords = numWordsfixedEffectCoefs) %>%
+  mutate(ratio = exp(numWords) / exp(depth) - 1) %>%
+  mutate(subreddit = substring(subreddit, 10)) %>%
+  filter(subreddit != "t)") 
+
+
+ggplot(ratioDF, aes(x = reorder(subreddit, ratio), y = ratio)) +
+    geom_bar(stat = "identity") +
+    ylab("numWords : depth") +
+    xlab("subreddit") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+Common tree links?
+
+```{r}
+ruleTypeD <- parsedD %>%
+  mutate(head = ifelse(head == 0, NA, head)) %>%
+  group_by(row) %>%
+  do(mutate(., ruleType = paste(upostag, "->", upostag[wordIndex[head]])))
+```
+
+
+```{r}
+ruleTypeD %>%
+  group_by(subreddit, ruleType) %>% 
+  tally() %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot(aes(x = ruleType, y = prop, group = subreddit)) +
+    geom_step() +
+    ylab("numWords : depth") +
+    xlab("subreddit") +
+    facet_wrap(~ subreddit) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+KL Divergence
+
+```{r}
+ruleProps = ruleTypeD %>%
+  group_by(subreddit, ruleType) %>% 
+  tally() #%>%
+
+fullGrid <- expand.grid(subreddit = unique(ruleProps$subreddit), 
+                        ruleType = unique(ruleProps$ruleType)) 
+head(ruleProps)
+head(fullGrid)
+ruleProps %>%
+  right_join(fullGrid, by = c("subreddit", "ruleType")) %>%
+  mutate(n = ifelse(is.na(n), 1, n + 1)) %>%
+  mutate(prop = (n+1) / sum(n)) #%>%
+#  group_by(subreddit) 
+
+```
