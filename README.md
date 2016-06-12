@@ -1,6 +1,6 @@
 Overview
 ============
-This code will take in an input phase from the user, analyze it, and output a reworded phrase using Google's Parsey McParseface parser. More information abut  be found in the [original repo](https://github.com/tensorflow/models/tree/master/syntaxnet). This the code for 'Build an AI Reader' on [Youtube](https://youtu.be/AKwfVAKaigI)
+This code will reword an input phrase from the user using Google's Parsey McParseface parser. More information abut  be found in the [original repo](https://github.com/tensorflow/models/tree/master/syntaxnet). This the code for 'Build an AI Reader' on [Youtube](https://youtu.be/AKwfVAKaigI)
 
 Dependencies
 ============
