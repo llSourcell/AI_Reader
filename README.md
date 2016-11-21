@@ -9,7 +9,7 @@ Dependencies
 * bazel - instructions [here](http://bazel.io/docs/install.html)
 * swig `brew install swig`
 * protobuf `pip install -U protobuf==3.0.0b2`
-* asciitree `pip install -U protobuf==3.0.0b2`
+* asciitree `pip install asciitree`
 * numpy `pip install numpy`
 
 Use [pip](https://pypi.python.org/pypi/pip) to install any missing dependencies
